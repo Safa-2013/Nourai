@@ -30,3 +30,4 @@ Bitte nach dem ersten Start im Code ändern. Die Konten liegen in `localStorage`
 Diese GitHub-Pages-Version besitzt keinen sicheren Server. Deshalb sind Anmeldung und Projekte nur lokal im Browser gespeichert. Echte KI-Bild- und Videoerzeugung benötigt einen externen KI-Dienst und meist API-Kosten. Eine frei wählbare `.com`-Domain muss bei einem Domain-Anbieter registriert und bezahlt werden; GitHub Pages bietet kostenlos eine `github.io`-Adresse.
 
 Für eine echte Mehrbenutzer-Version empfiehlt sich Supabase/Firebase plus ein sicherer Server oder Cloudflare Worker.
+Nour AI
