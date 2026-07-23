@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#6d5dfc">
+  <title>Nour AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div id="logoBox" class="logo">N</div>
+      <div><strong id="brandName">Nour AI</strong><small>Creative AI Studio</small></div>
+    </div>
+    <nav>
+      <button data-view="home">Start</button>
+      <button data-view="create">Erstellen</button>
+      <button data-view="projects">Projekte</button>
+      <button id="adminNav" data-view="admin" class="hidden">Admin</button>
+    </nav>
+    <div class="account">
+      <span id="userBadge">Gast</span>
+      <button id="loginBtn">Anmelden</button>
+      <button id="logoutBtn" class="hidden">Abmelden</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="view active hero">
+      <div>
+        <span class="pill">Kostenloser Starter · GitHub Pages</span>
+        <h1>Ideen in Bilder, Sticker, Spiele und Websites verwandeln.</h1>
+        <p>Nour AI ist ein erweiterbarer Creative-Studio-Starter mit Gastmodus, Konten, Rollen und Admin-Bereich.</p>
+        <button class="primary" data-view="create">Jetzt erstellen</button>
+      </div>
+      <div class="glass">
+        <h3>Was ist enthalten?</h3>
+        <div class="feature-grid">
+          <article>🖼️<b>Bilder</b><span>Prompt-Karten und Export</span></article>
+          <article>🎬<b>Videos</b><span>Storyboard-Generator</span></article>
+          <article>🎮<b>Spiele</b><span>Mini-Spiel als HTML</span></article>
+          <article>🌐<b>Websites</b><span>Website-Code herunterladen</span></article>
+          <article>✨<b>Sticker</b><span>PNG-Sticker erstellen</span></article>
+          <article>🛡️<b>Admin</b><span>Benutzer, Rollen, Design</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="create" class="view">
+      <h2>Creative Studio</h2>
+      <div class="tabs">
+        <button class="tab active" data-tool="assistant">Assistent</button>
+        <button class="tab" data-tool="image">Bild</button>
+        <button class="tab" data-tool="video">Video</button>
+        <button class="tab" data-tool="sticker">Sticker</button>
+        <button class="tab" data-tool="game">Spiel</button>
+        <button class="tab" data-tool="website">Website</button>
+      </div>
+
+      <div id="assistant" class="tool active card">
+        <h3>Nour Assistent</h3>
+        <textarea id="assistantPrompt" placeholder="Beschreibe deine Idee …"></textarea>
+        <button class="primary" onclick="runAssistant()">Idee ausarbeiten</button>
+        <pre id="assistantOut"></pre>
+      </div>
+
+      <div id="image" class="tool card">
+        <h3>Bild-Idee</h3>
+        <input id="imagePrompt" placeholder="z. B. futuristische Stadt bei Nacht">
+        <select id="imageStyle"><option>Fotorealistisch</option><option>3D</option><option>Anime</option><option>Logo</option><option>Illustration</option></select>
+        <button class="primary" onclick="makeImageCard()">Vorschau erstellen</button>
+        <canvas id="imageCanvas" width="1024" height="1024"></canvas>
+        <button onclick="downloadCanvas('imageCanvas','nour-bild.png')">PNG herunterladen</button>
+      </div>
+
+      <div id="video" class="tool card">
+        <h3>Video-Storyboard</h3>
+        <input id="videoTopic" placeholder="Thema des Videos">
+        <input id="videoLength" type="number" min="5" max="120" value="15">
+        <button class="primary" onclick="makeStoryboard()">Storyboard erstellen</button>
+        <div id="videoOut"></div>
+      </div>
+
+      <div id="sticker" class="tool card">
+        <h3>Sticker-Studio</h3>
+        <input id="stickerText" value="NOUR">
+        <input id="stickerEmoji" value="✨">
+        <input id="stickerColor" type="color" value="#6d5dfc">
+        <button class="primary" onclick="makeSticker()">Sticker erstellen</button>
+        <canvas id="stickerCanvas" width="800" height="800"></canvas>
+        <button onclick="downloadCanvas('stickerCanvas','nour-sticker.png')">PNG herunterladen</button>
+      </div>
+
+      <div id="game" class="tool card">
+        <h3>Spiel-Generator</h3>
+        <input id="gameName" value="Nour Coin Catch">
+        <button class="primary" onclick="downloadGame()">Spiel als HTML herunterladen</button>
+        <p>Erstellt ein spielbares Browser-Mini-Spiel ohne zusätzliche Installation.</p>
+      </div>
+
+      <div id="website" class="tool card">
+        <h3>Website-Generator</h3>
+        <input id="siteName" value="Meine neue Website">
+        <input id="siteSubtitle" value="Willkommen auf meiner Website">
+        <select id="siteType"><option>Unternehmen</option><option>Portfolio</option><option>Shop-Startseite</option><option>Landingpage</option></select>
+        <button class="primary" onclick="downloadWebsite()">Website als HTML herunterladen</button>
+        <div class="notice">Eine echte .com-Domain muss bei einem Domain-Anbieter registriert werden. GitHub Pages stellt kostenlos eine github.io-Adresse bereit.</div>
+      </div>
+    </section>
+
+    <section id="projects" class="view">
+      <h2>Meine Projekte</h2>
+      <div id="projectList" class="project-list"></div>
+    </section>
+
+    <section id="admin" class="view">
+      <h2>Admin-Bereich</h2>
+      <div class="admin-grid">
+        <div class="card">
+          <h3>Konto erstellen</h3>
+          <input id="newUsername" placeholder="Benutzername">
+          <input id="newPassword" type="password" placeholder="Passwort">
+          <select id="newRole"><option value="user">Benutzer</option><option value="employee">Mitarbeiter</option><option value="admin">Admin</option></select>
+          <button class="primary" onclick="createUser()">Konto anlegen</button>
+          <div id="userList"></div>
+        </div>
+        <div class="card">
+          <h3>Ansicht anpassen</h3>
+          <input id="adminBrand" value="Nour AI">
+          <input id="adminLogo" value="N">
+          <input id="adminAccent" type="color" value="#6d5dfc">
+          <button class="primary" onclick="saveTheme()">Design speichern</button>
+          <button onclick="resetApp()">App zurücksetzen</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="loginDialog">
+    <form method="dialog" class="login-card">
+      <h2>Anmelden</h2>
+      <input id="loginUsername" placeholder="Benutzername" autocomplete="username">
+      <input id="loginPassword" type="password" placeholder="Passwort" autocomplete="current-password">
+      <p id="loginMessage"></p>
+      <button type="button" class="primary" onclick="login()">Anmelden</button>
+      <button type="button" onclick="register()">Kostenlos registrieren</button>
+      <button>Schließen</button>
+      <small>Keine E-Mail-Bestätigung erforderlich.</small>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
