@@ -1,15 +1,24 @@
 import { GoogleGenAI } from "@google/genai";
-export default async function handler(req,res){
-  if(req.method!=="POST") return res.status(405).json({error:"POST erforderlich"});
-  if(!process.env.GEMINI_API_KEY) return res.status(500).json({error:"GEMINI_API_KEY fehlt in Vercel."});
-  try{
-    const {prompt}=req.body||{};
-    const ai=new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
-    const r=await ai.models.generateContent({
-      model:"gemini-3.6-flash",
-      contents:`Erstelle eine vollständige moderne responsive Website als EINE HTML-Datei mit eingebettetem CSS und JavaScript. Gib ausschließlich den HTML-Code aus, ohne Markdown-Codeblock. Wunsch: ${prompt}`
+import { allowPost, bodyOf, fail, getApiKey, safeWebsiteHtml } from "./_utils.js";
+
+export default async function handler(req, res) {
+  if (!allowPost(req, res)) return;
+  try {
+    const { prompt } = bodyOf(req);
+    if (!String(prompt || "").trim()) return res.status(400).json({ error: "Bitte beschreibe die Website." });
+
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const interaction = await ai.interactions.create({
+      model: "gemini-3.6-flash",
+      input: String(prompt).trim(),
+      system_instruction: `Du bist ein professioneller Webdesigner. Erstelle eine vollständige, moderne und responsive Website als genau EINE HTML-Datei. CSS muss in einem <style>-Block stehen. Verwende kein JavaScript, keine externen Skripte und keine Markdown-Codeblöcke. Verwende bei fehlenden Bildern schöne CSS-Flächen, Gradients oder öffentlich erreichbare Unsplash-URLs. Die Website muss sofort gut aussehen und deutschsprachige Texte enthalten, außer der Benutzer verlangt eine andere Sprache. Gib ausschließlich HTML aus.`,
+      generation_config: { thinking_level: "low" }
     });
-    let html=(r.text||"").replace(/^```html\s*/i,"").replace(/```$/,"").trim();
-    res.status(200).json({html});
-  }catch(e){res.status(500).json({error:e?.message||"Website-Fehler"});}
+
+    const html = safeWebsiteHtml(interaction.output_text || "");
+    if (!html.includes("<html")) throw new Error("Die KI hat keine gültige Website geliefert. Bitte versuche es erneut.");
+    res.status(200).json({ html });
+  } catch (error) {
+    fail(res, error);
+  }
 }

@@ -1,0 +1,35 @@
+NOUR AI – EINFACHE EINRICHTUNG
+===============================
+
+Du brauchst nur GitHub, Vercel und einen Gemini-API-Schlüssel.
+
+1. DIE DATEIEN BEI GITHUB HOCHLADEN
+   - Öffne dein Repository „Nourai“.
+   - Klicke: Add file → Upload files.
+   - Ziehe ALLE Dateien und den Ordner „api“ aus diesem entpackten Ordner hinein.
+   - Klicke unten auf Commit changes.
+
+2. GEMINI-SCHLÜSSEL HOLEN
+   - Öffne Google AI Studio.
+   - Klicke auf „Get API key“ / „API-Schlüssel abrufen“.
+   - Erstelle einen Schlüssel und kopiere ihn.
+   - Den Schlüssel niemals bei GitHub einfügen.
+
+3. BEI VERCEL ONLINE STELLEN
+   - Melde dich bei Vercel mit GitHub an.
+   - Klicke „Add New“ → „Project“.
+   - Wähle dein Repository „Nourai“ und klicke „Import“.
+   - Öffne vor dem Deploy den Bereich „Environment Variables“.
+   - Name: GEMINI_API_KEY
+   - Value: deinen kopierten Schlüssel einfügen.
+   - Klicke „Add“ und danach „Deploy“.
+
+4. FERTIG
+   - Vercel zeigt dir nach dem Deploy deine neue Internetadresse.
+   - GitHub Pages wird für diese echte KI nicht mehr benötigt.
+
+WICHTIG
+- Chat kann je nach Google-Kontingent kostenlos funktionieren.
+- Bild- und Videogenerierung können einen bezahlten Google-API-Zugang benötigen.
+- Videos benötigen oft mehrere Minuten.
+- Chats und Websites werden in dieser einfachen Version im Browser gespeichert.

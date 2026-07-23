@@ -1,3 +1,143 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nour AI</title><link rel="stylesheet" href="/style.css"></head>
-<body><aside><div class="brand"><b>N</b><span>Nour AI</span></div><button onclick="newChat()">＋ Neuer Chat</button><div class="modes"><button onclick="setMode('chat')">💬 Chat</button><button onclick="setMode('image')">🖼️ Bild</button><button onclick="setMode('website')">🌐 Website</button></div><small>Echte KI über Gemini API</small></aside>
-<main><header><h2 id="title">Nour AI</h2><span id="status">Bereit</span></header><section id="messages"><div class="welcome"><h1>Was möchtest du erstellen?</h1><p>Fragen stellen, Bilder erzeugen oder komplette Websites bauen.</p></div></section><div id="result"></div><form id="composer"><textarea id="prompt" placeholder="Nachricht an Nour AI …"></textarea><button>➤</button></form></main><script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d14">
+  <title>Nour AI</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <div class="brand-mark">N</div>
+        <div class="brand-copy"><strong>Nour AI</strong><span>Creative Intelligence</span></div>
+        <button class="icon-btn sidebar-close" id="sidebarClose" aria-label="Menü schließen">×</button>
+      </div>
+
+      <button class="new-chat" id="newChatBtn"><span>＋</span> Neuer Chat</button>
+
+      <div class="sidebar-label">Unterhaltungen</div>
+      <div class="history" id="history"></div>
+
+      <div class="sidebar-foot">
+        <div class="mini-status"><span class="status-dot"></span><span>Gemini verbunden nach Einrichtung</span></div>
+        <button class="ghost full" id="clearChatsBtn">Verlauf löschen</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menü öffnen">☰</button>
+          <div>
+            <div class="top-title" id="topTitle">Nour AI</div>
+            <div class="top-subtitle" id="topSubtitle">Chat</div>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span class="connection" id="connection"><i></i> Bereit</span>
+          <div class="avatar">G</div>
+        </div>
+      </header>
+
+      <section class="messages" id="messages" aria-live="polite"></section>
+
+      <section class="composer-wrap">
+        <div class="mode-row" id="modeRow">
+          <button class="mode active" data-mode="chat">✦ Chat</button>
+          <button class="mode" data-mode="image">▧ Bild</button>
+          <button class="mode" data-mode="video">▶ Video</button>
+          <button class="mode" data-mode="website">◇ Website</button>
+        </div>
+
+        <div class="options-row" id="optionsRow">
+          <div class="option-group image-options hidden">
+            <label>Format
+              <select id="imageRatio">
+                <option value="1:1">1:1 Quadrat</option>
+                <option value="4:5">4:5 Instagram</option>
+                <option value="16:9">16:9 Breit</option>
+                <option value="9:16">9:16 Story</option>
+              </select>
+            </label>
+            <label>Qualität
+              <select id="imageSize">
+                <option value="1K">1K</option>
+                <option value="2K">2K</option>
+                <option value="4K">4K</option>
+              </select>
+            </label>
+            <button class="small-control" id="attachImageBtn">＋ Vorlage</button>
+            <input type="file" id="imageFile" accept="image/png,image/jpeg,image/webp" hidden>
+            <span class="file-chip hidden" id="fileChip"></span>
+          </div>
+          <div class="option-group video-options hidden">
+            <label>Format
+              <select id="videoRatio">
+                <option value="16:9">16:9 Querformat</option>
+                <option value="9:16">9:16 Hochformat</option>
+              </select>
+            </label>
+            <span class="paid-note">Veo benötigt meist einen bezahlten API-Zugang.</span>
+          </div>
+          <div class="option-group website-options hidden">
+            <span class="editor-note">Nach der Erstellung kannst du Texte, Farben, Bilder und Buttons bearbeiten.</span>
+          </div>
+        </div>
+
+        <form class="composer" id="composer">
+          <textarea id="prompt" rows="1" placeholder="Nachricht an Nour AI …" autocomplete="off"></textarea>
+          <button class="send-btn" id="sendBtn" type="submit" aria-label="Senden">↑</button>
+        </form>
+        <div class="composer-note">Nour AI kann Fehler machen. Prüfe wichtige Ergebnisse.</div>
+      </section>
+    </main>
+  </div>
+
+  <div class="mobile-shade" id="mobileShade"></div>
+
+  <dialog class="setup-dialog" id="setupDialog">
+    <button class="dialog-close" id="setupClose">×</button>
+    <div class="dialog-icon">🔑</div>
+    <h2>Nur noch der API-Schlüssel fehlt</h2>
+    <p>Die Website ist richtig installiert, aber Vercel kennt deinen Gemini-Schlüssel noch nicht.</p>
+    <ol>
+      <li>Öffne dein Projekt bei <b>Vercel</b>.</li>
+      <li>Gehe zu <b>Settings → Environment Variables</b>.</li>
+      <li>Name: <code>GEMINI_API_KEY</code> – darunter deinen Schlüssel einfügen.</li>
+      <li>Danach unter <b>Deployments</b> auf <b>Redeploy</b> klicken.</li>
+    </ol>
+    <button class="primary wide" id="setupOkay">Verstanden</button>
+  </dialog>
+
+  <dialog class="editor-dialog" id="editorDialog">
+    <div class="editor-head">
+      <div><strong>Website-Editor</strong><span>Direkt anklicken und Text ändern</span></div>
+      <div class="editor-head-actions">
+        <button class="ghost" id="previewDesktop">Desktop</button>
+        <button class="ghost" id="previewMobile">Handy</button>
+        <button class="primary" id="downloadWebsite">HTML herunterladen</button>
+        <button class="icon-btn" id="closeEditor">×</button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <div class="editor-toolbar">
+        <button data-command="bold"><b>B</b></button>
+        <button data-command="italic"><i>I</i></button>
+        <button data-block="h2">Überschrift</button>
+        <button id="addText">＋ Text</button>
+        <button id="addButton">＋ Button</button>
+        <button id="addImage">＋ Bild</button>
+        <label class="color-control">Hintergrund <input type="color" id="pageColor" value="#ffffff"></label>
+      </div>
+      <div class="editor-stage" id="editorStage">
+        <iframe id="editorFrame" title="Website-Vorschau" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>

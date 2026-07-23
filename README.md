@@ -1,17 +1,30 @@
-# Nour AI – echte KI
+# Nour AI – echte KI-Version
 
-Diese Version nutzt die Gemini API für:
-- echten KI-Chat
-- echte Bildgenerierung
-- echte Website-Erstellung mit Vorschau und HTML-Download
+Eine moderne Chat-Oberfläche mit serverseitiger Gemini-Anbindung.
 
-## Veröffentlichen
-1. Alle Dateien in ein neues GitHub-Repository hochladen.
-2. Auf vercel.com anmelden und „Add New → Project“ wählen.
-3. Das GitHub-Repository importieren.
-4. In Vercel unter Settings → Environment Variables hinzufügen:
-   - Name: `GEMINI_API_KEY`
-   - Value: dein Schlüssel aus Google AI Studio
-5. Deploy klicken.
+## Funktionen
 
-WICHTIG: Den API-Schlüssel niemals in GitHub-Dateien schreiben. Bildgenerierung kann kostenpflichtig sein.
+- echter KI-Chat mit `gemini-3.6-flash`
+- echte Bildgenerierung und Bildbearbeitung mit `gemini-3.1-flash-image`
+- echte 8-Sekunden-Videos mit Ton über `veo-3.1-generate-preview`
+- komplette Websites aus einer Beschreibung
+- visueller Website-Editor: Texte, Überschriften, Buttons, Bilder und Hintergrund ändern
+- HTML-Download
+- lokaler Chatverlauf und lokale Projekte
+- responsive Handy- und Desktopansicht
+
+## Schnellstart
+
+Lies zuerst **START-HIER.txt**.
+
+Vercel benötigt diese geheime Umgebungsvariable:
+
+```text
+GEMINI_API_KEY=dein_schluessel
+```
+
+Der Schlüssel gehört ausschließlich in Vercel und niemals in GitHub-Dateien.
+
+## Hinweis
+
+Diese einfache Version benötigt keine zusätzliche Datenbank. Deshalb werden Verlauf und Websites im Browser gespeichert. Sichere Konten, Rollen und ein echter Admin-Bereich würden zusätzlich eine Datenbank wie Supabase benötigen.
