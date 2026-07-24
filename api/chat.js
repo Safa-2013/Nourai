@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { allowPost, bodyOf, fail, getApiKey } from "./_utils.js";
+import { allowPost, bodyOf, fail, getApiKey } from "../lib/utils.js";
 
 export default async function handler(req, res) {
   if (!allowPost(req, res)) return;

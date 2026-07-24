@@ -1,101 +1,13 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "chat.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 300
-      }
+  "functions": {
+    "api/video-start.js": {
+      "maxDuration": 300
     },
-    {
-      "src": "image.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 300
-      }
+    "api/video-status.js": {
+      "maxDuration": 60
     },
-    {
-      "src": "website.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 300
-      }
-    },
-    {
-      "src": "video-start.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 300
-      }
-    },
-    {
-      "src": "video-status.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 300
-      }
-    },
-    {
-      "src": "video-download.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 300
-      }
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "style.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "app.js",
-      "use": "@vercel/static"
+    "api/video-download.js": {
+      "maxDuration": 300
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/chat",
-      "dest": "/chat.js"
-    },
-    {
-      "src": "/api/image",
-      "dest": "/image.js"
-    },
-    {
-      "src": "/api/website",
-      "dest": "/website.js"
-    },
-    {
-      "src": "/api/video-start",
-      "dest": "/video-start.js"
-    },
-    {
-      "src": "/api/video-status",
-      "dest": "/video-status.js"
-    },
-    {
-      "src": "/api/video-download",
-      "dest": "/video-download.js"
-    },
-    {
-      "src": "/style.css",
-      "dest": "/style.css"
-    },
-    {
-      "src": "/app.js",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/favicon.ico",
-      "status": 204
-    },
-    {
-      "src": "/.*",
-      "dest": "/index.html"
-    }
-  ]
+  }
 }

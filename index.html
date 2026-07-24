@@ -138,6 +138,49 @@
     </div>
   </dialog>
 
+
+  <dialog class="asset-dialog" id="imageEditorDialog">
+    <div class="asset-head"><div><strong>Bild-Editor</strong><span>Canva-ähnliche einfache Ansicht</span></div><button class="icon-btn" id="closeImageEditor">×</button></div>
+    <div class="asset-layout">
+      <aside class="asset-tools">
+        <h3>Text & Elemente</h3>
+        <input id="imgTextInput" value="Dein Text" placeholder="Text">
+        <div class="tool-row"><input type="color" id="imgTextColor" value="#ffffff"><input type="range" id="imgTextSize" min="20" max="160" value="64"></div>
+        <button id="addImageText">＋ Text hinzufügen</button>
+        <button id="addImageSticker">✨ Sticker hinzufügen</button>
+        <button id="deleteImageLayer">Ausgewähltes Element löschen</button>
+        <h3>Bild</h3>
+        <label>Helligkeit <input type="range" id="imgBrightness" min="40" max="160" value="100"></label>
+        <label>Kontrast <input type="range" id="imgContrast" min="40" max="160" value="100"></label>
+        <label class="upload-button">Eigenes Bild öffnen<input type="file" id="imageEditorUpload" accept="image/*" hidden></label>
+        <button class="primary" id="downloadEditedImage">PNG herunterladen</button>
+      </aside>
+      <div class="asset-stage"><canvas id="imageEditCanvas" width="1080" height="1080"></canvas><small>Elemente im Bild mit der Maus verschieben.</small></div>
+    </div>
+  </dialog>
+
+  <dialog class="asset-dialog video-editor-dialog" id="videoEditorDialog">
+    <div class="asset-head"><div><strong>Video-Editor</strong><span>CapCut-ähnliche einfache Timeline</span></div><button class="icon-btn" id="closeVideoEditor">×</button></div>
+    <div class="video-workspace">
+      <aside class="asset-tools">
+        <h3>Text</h3><input id="videoText" placeholder="Text im Video"><div class="tool-row"><input type="color" id="videoTextColor" value="#ffffff"><input type="range" id="videoTextSize" min="18" max="110" value="48"></div>
+        <select id="videoTextPosition"><option value="bottom">Unten</option><option value="center">Mitte</option><option value="top">Oben</option></select>
+        <h3>Anpassen</h3>
+        <label>Helligkeit <input type="range" id="videoBrightness" min="50" max="150" value="100"></label>
+        <label>Kontrast <input type="range" id="videoContrast" min="50" max="150" value="100"></label>
+        <label>Lautstärke <input type="range" id="videoVolume" min="0" max="100" value="100"></label>
+        <label>Geschwindigkeit <select id="videoSpeed"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="1.5">1,5×</option><option value="2">2×</option></select></label>
+        <label>Format <select id="videoEditRatio"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option></select></label>
+        <label class="upload-button">Eigenes Video öffnen<input type="file" id="videoEditorUpload" accept="video/*" hidden></label>
+        <button class="primary" id="exportEditedVideo">Video exportieren</button><small>Exportformat hängt vom Browser ab und kann WebM sein.</small>
+      </aside>
+      <div class="video-main">
+        <div class="video-preview" id="videoPreview"><video id="videoEditorPlayer" controls playsinline></video><div id="videoOverlayText"></div></div>
+        <div class="timeline"><div class="timeline-title">Timeline</div><input type="range" id="videoPlayhead" min="0" max="8" step="0.01" value="0"><div class="trim-row"><label>Start <input type="number" id="trimStart" min="0" step="0.1" value="0"></label><label>Ende <input type="number" id="trimEnd" min="0" step="0.1" value="8"></label></div></div>
+      </div>
+    </div>
+  </dialog>
+
   <script src="./app.js"></script>
 </body>
 </html>

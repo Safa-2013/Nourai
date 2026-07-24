@@ -1,4 +1,4 @@
-import { fail, getApiKey } from "./_utils.js";
+import { fail, getApiKey } from "../lib/utils.js";
 
 export default async function handler(req, res) {
   try {

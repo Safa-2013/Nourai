@@ -1,30 +1,6 @@
-# Nour AI – echte KI-Version
+# Nour AI Studio v3
 
-Eine moderne Chat-Oberfläche mit serverseitiger Gemini-Anbindung.
+Echte Gemini-KI für Vercel mit Chat, Bildgenerierung, Veo-Video und Website-Generator. Dazu kommen ein einfacher Canva-ähnlicher Bildeditor, ein CapCut-ähnlicher Videoeditor und ein Website-Editor.
 
-## Funktionen
-
-- echter KI-Chat mit `gemini-3.6-flash`
-- echte Bildgenerierung und Bildbearbeitung mit `gemini-3.1-flash-image`
-- echte 8-Sekunden-Videos mit Ton über `veo-3.1-generate-preview`
-- komplette Websites aus einer Beschreibung
-- visueller Website-Editor: Texte, Überschriften, Buttons, Bilder und Hintergrund ändern
-- HTML-Download
-- lokaler Chatverlauf und lokale Projekte
-- responsive Handy- und Desktopansicht
-
-## Schnellstart
-
-Lies zuerst **START-HIER.txt**.
-
-Vercel benötigt diese geheime Umgebungsvariable:
-
-```text
-GEMINI_API_KEY=dein_schluessel
-```
-
-Der Schlüssel gehört ausschließlich in Vercel und niemals in GitHub-Dateien.
-
-## Hinweis
-
-Diese einfache Version benötigt keine zusätzliche Datenbank. Deshalb werden Verlauf und Websites im Browser gespeichert. Sichere Konten, Rollen und ein echter Admin-Bereich würden zusätzlich eine Datenbank wie Supabase benötigen.
+## Wichtig gegen Fehler 405
+Die Anwendung muss über die `.vercel.app`-Adresse geöffnet werden. Der komplette `api`-Ordner und der `lib`-Ordner müssen im GitHub-Repository liegen. Test: `/api/health` muss JSON zurückgeben.

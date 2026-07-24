@@ -157,7 +157,7 @@ function messageHtml(message) {
 
   let result = "";
   if (message.type === "image" && message.src) {
-    result = `<div class="result-card"><img src="${message.src}" alt="Von Nour AI erzeugtes Bild"><div class="card-actions"><a class="primary" href="${message.src}" download="nour-ai-bild.png">Bild herunterladen</a></div></div>`;
+    result = `<div class="result-card"><img src="${message.src}" alt="Von Nour AI erzeugtes Bild"><div class="card-actions"><button class="primary edit-image" data-message-id="${message.id}">Bild bearbeiten</button><a href="${message.src}" download="nour-ai-bild.png">Bild herunterladen</a></div></div>`;
   }
   if (message.type === "website" && message.html) {
     const encoded = encodeURIComponent(message.id);
@@ -167,7 +167,7 @@ function messageHtml(message) {
     result = `<div class="result-card progress-card"><div class="progress-head"><b>Video wird erstellt</b><span>${escapeHtml(message.status || "Das kann einige Minuten dauern …")}</span></div><div class="progress-track"><div class="progress-bar"></div></div></div>`;
   }
   if (message.type === "video" && message.src) {
-    result = `<div class="result-card"><video src="${escapeHtml(message.src)}" controls playsinline></video><div class="card-actions"><a class="primary" href="${escapeHtml(message.src)}" download="nour-ai-video.mp4">Video herunterladen</a><span class="paid-note">Google speichert erzeugte Videos nur begrenzte Zeit. Lade es bald herunter.</span></div></div>`;
+    result = `<div class="result-card"><video src="${escapeHtml(message.src)}" controls playsinline></video><div class="card-actions"><button class="primary edit-video" data-message-id="${message.id}">Video bearbeiten</button><a href="${escapeHtml(message.src)}" download="nour-ai-video.mp4">Original herunterladen</a><span class="paid-note">Google speichert erzeugte Videos nur begrenzte Zeit.</span></div></div>`;
   }
 
   return `<article class="message assistant"><div class="message-avatar">N</div><div><div class="message-meta">Nour AI</div><div class="bubble">${formatText(message.text || "")}${result}</div></div></article>`;
@@ -202,6 +202,8 @@ function renderMessages() {
       if (message?.html) downloadText("nour-ai-website.html", message.html, "text/html");
     };
   });
+  $$(".edit-image", els.messages).forEach(button => button.onclick = () => { const m=chat.messages.find(x=>x.id===button.dataset.messageId); if(m?.src) openImageEditor(m.src); });
+  $$(".edit-video", els.messages).forEach(button => button.onclick = () => { const m=chat.messages.find(x=>x.id===button.dataset.messageId); if(m?.src) openVideoEditor(m.src); });
 }
 
 function renderHistory() {
@@ -281,12 +283,14 @@ function removeMessage(id) {
 
 async function api(path, options = {}) {
   const response = await fetch(path, options);
-  let data;
-  try { data = await response.json(); } catch { data = {}; }
-  if (!response.ok) {
-    const error = new Error(data.error || `Fehler ${response.status}`);
-    error.status = response.status;
-    throw error;
+  const contentType = response.headers.get("content-type") || "";
+  let data = {};
+  if (contentType.includes("application/json")) { try { data = await response.json(); } catch {} }
+  if (!response.ok || !contentType.includes("application/json")) {
+    let message = data.error || `Fehler ${response.status}`;
+    if (location.hostname.endsWith("github.io")) message = "Du hast noch die GitHub-Pages-Adresse geöffnet. Öffne die Adresse, die auf .vercel.app endet.";
+    else if ([404,405].includes(response.status)) message = "Die Vercel-API fehlt noch. Lade den kompletten Ordner api und den Ordner lib hoch und starte in Vercel Redeploy.";
+    const error = new Error(message); error.status=response.status; throw error;
   }
   return data;
 }
@@ -566,3 +570,37 @@ else {
 }
 setMode("chat");
 autoSize();
+
+
+// Verbindung prüfen: verhindert den rätselhaften 405-Fehler auf GitHub Pages.
+async function checkBackend(){
+  try{
+    const r=await fetch("/api/health",{cache:"no-store"});
+    const ct=r.headers.get("content-type")||"";
+    if(!r.ok||!ct.includes("application/json")) throw new Error();
+    const d=await r.json();
+    if(!d.hasGeminiKey){setConnection("API-Schlüssel fehlt","error"); if(!els.setup.open) els.setup.showModal();}
+  }catch{
+    setConnection("Falsche Adresse oder API fehlt","error");
+    if(location.hostname.endsWith("github.io")) addMessage({role:"assistant",type:"text",text:"Wichtig: Diese echte KI funktioniert nicht über die github.io-Adresse. Öffne dein Nour-AI-Projekt über die Adresse, die auf .vercel.app endet."});
+  }
+}
+
+const imageEditor={canvas:$("#imageEditCanvas"),ctx:$("#imageEditCanvas").getContext("2d"),image:null,layers:[],selected:-1,drag:null};
+function drawImageEditor(){const {canvas,ctx,image,layers}=imageEditor;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#222";ctx.fillRect(0,0,canvas.width,canvas.height);if(image){ctx.save();ctx.filter=`brightness(${$("#imgBrightness").value}%) contrast(${$("#imgContrast").value}%)`;const s=Math.max(canvas.width/image.width,canvas.height/image.height),w=image.width*s,h=image.height*s;ctx.drawImage(image,(canvas.width-w)/2,(canvas.height-h)/2,w,h);ctx.restore();}layers.forEach((l,i)=>{ctx.save();ctx.font=`800 ${l.size}px Arial`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.lineWidth=Math.max(3,l.size/14);ctx.strokeStyle="rgba(0,0,0,.65)";ctx.strokeText(l.text,l.x,l.y);ctx.fillStyle=l.color;ctx.fillText(l.text,l.x,l.y);if(i===imageEditor.selected){const m=ctx.measureText(l.text);ctx.strokeStyle="#6d5dfc";ctx.lineWidth=3;ctx.strokeRect(l.x-m.width/2-10,l.y-l.size/2-10,m.width+20,l.size+20);}ctx.restore();});}
+function loadEditorImage(src){const img=new Image();img.onload=()=>{imageEditor.image=img;const ratio=img.width/img.height;imageEditor.canvas.width=ratio>=1?1080:Math.round(1080*ratio);imageEditor.canvas.height=ratio>=1?Math.round(1080/ratio):1080;drawImageEditor();};img.src=src;}
+function openImageEditor(src){imageEditor.layers=[];imageEditor.selected=-1;loadEditorImage(src);$("#imageEditorDialog").showModal();}
+function addImageLayer(text){imageEditor.layers.push({text,color:$("#imgTextColor").value,size:+$("#imgTextSize").value,x:imageEditor.canvas.width/2,y:imageEditor.canvas.height/2});imageEditor.selected=imageEditor.layers.length-1;drawImageEditor();}
+$("#addImageText").onclick=()=>addImageLayer($("#imgTextInput").value||"Text");$("#addImageSticker").onclick=()=>addImageLayer("✨");$("#deleteImageLayer").onclick=()=>{if(imageEditor.selected>=0)imageEditor.layers.splice(imageEditor.selected,1);imageEditor.selected=-1;drawImageEditor();};
+["#imgBrightness","#imgContrast"].forEach(s=>$(s).oninput=drawImageEditor);$("#imgTextColor").oninput=e=>{const l=imageEditor.layers[imageEditor.selected];if(l){l.color=e.target.value;drawImageEditor();}};$("#imgTextSize").oninput=e=>{const l=imageEditor.layers[imageEditor.selected];if(l){l.size=+e.target.value;drawImageEditor();}};
+imageEditor.canvas.onpointerdown=e=>{const r=imageEditor.canvas.getBoundingClientRect(),x=(e.clientX-r.left)*imageEditor.canvas.width/r.width,y=(e.clientY-r.top)*imageEditor.canvas.height/r.height;for(let i=imageEditor.layers.length-1;i>=0;i--){const l=imageEditor.layers[i];imageEditor.ctx.font=`800 ${l.size}px Arial`;const w=imageEditor.ctx.measureText(l.text).width;if(x>l.x-w/2-20&&x<l.x+w/2+20&&y>l.y-l.size/2-20&&y<l.y+l.size/2+20){imageEditor.selected=i;imageEditor.drag={dx:x-l.x,dy:y-l.y};imageEditor.canvas.setPointerCapture(e.pointerId);drawImageEditor();return;}}imageEditor.selected=-1;drawImageEditor();};
+imageEditor.canvas.onpointermove=e=>{if(!imageEditor.drag||imageEditor.selected<0)return;const r=imageEditor.canvas.getBoundingClientRect(),x=(e.clientX-r.left)*imageEditor.canvas.width/r.width,y=(e.clientY-r.top)*imageEditor.canvas.height/r.height,l=imageEditor.layers[imageEditor.selected];l.x=x-imageEditor.drag.dx;l.y=y-imageEditor.drag.dy;drawImageEditor();};imageEditor.canvas.onpointerup=()=>imageEditor.drag=null;
+$("#downloadEditedImage").onclick=()=>{drawImageEditor();const a=document.createElement("a");a.download="nour-ai-bearbeitet.png";a.href=imageEditor.canvas.toDataURL("image/png");a.click();};$("#closeImageEditor").onclick=()=>$("#imageEditorDialog").close();$("#imageEditorUpload").onchange=e=>{const f=e.target.files?.[0];if(f)loadEditorImage(URL.createObjectURL(f));};
+
+const vp=$("#videoEditorPlayer"),vo=$("#videoOverlayText"),vd=$("#videoEditorDialog");
+function applyVideoEditor(){vo.textContent=$("#videoText").value;vo.style.color=$("#videoTextColor").value;vo.style.fontSize=$("#videoTextSize").value+"px";const p=$("#videoTextPosition").value;vo.style.top=p==="top"?"12%":p==="center"?"50%":"auto";vo.style.bottom=p==="bottom"?"12%":"auto";vo.style.transform=p==="center"?"translateY(-50%)":"none";vp.style.filter=`brightness(${$("#videoBrightness").value}%) contrast(${$("#videoContrast").value}%)`;vp.volume=+$("#videoVolume").value/100;vp.playbackRate=+$("#videoSpeed").value;const ratio=$("#videoEditRatio").value;$("#videoPreview").style.aspectRatio=ratio.replace(":"," / ");}
+function openVideoEditor(src){vp.src=src;vd.showModal();vp.onloadedmetadata=()=>{const d=vp.duration||8;$("#videoPlayhead").max=d;$("#trimStart").max=d;$("#trimEnd").max=d;$("#trimEnd").value=d.toFixed(2);applyVideoEditor();};}
+["#videoText","#videoTextColor","#videoTextSize","#videoTextPosition","#videoBrightness","#videoContrast","#videoVolume","#videoSpeed","#videoEditRatio"].forEach(s=>$(s).oninput=applyVideoEditor);vp.ontimeupdate=()=>$("#videoPlayhead").value=vp.currentTime;$("#videoPlayhead").oninput=e=>vp.currentTime=+e.target.value;$("#closeVideoEditor").onclick=()=>{vp.pause();vd.close();};$("#videoEditorUpload").onchange=e=>{const f=e.target.files?.[0];if(f){vp.src=URL.createObjectURL(f);vp.load();}};
+$("#exportEditedVideo").onclick=async()=>{try{const start=Math.max(0,+$("#trimStart").value||0),end=Math.min(vp.duration,+$("#trimEnd").value||vp.duration);if(end<=start)throw Error("Ende muss nach dem Start liegen.");const ratio=$("#videoEditRatio").value,[rw,rh]=ratio.split(":").map(Number),canvas=document.createElement("canvas");canvas.width=rw>=rh?1280:720;canvas.height=rw>=rh?Math.round(canvas.width*rh/rw):Math.round(canvas.width*rh/rw);if(ratio==="9:16"){canvas.width=720;canvas.height=1280}else if(ratio==="1:1"){canvas.width=1080;canvas.height=1080}const ctx=canvas.getContext("2d"),stream=canvas.captureStream(30);let sourceStream=null;try{sourceStream=vp.captureStream?.();sourceStream?.getAudioTracks().forEach(t=>stream.addTrack(t));}catch{}const types=["video/mp4;codecs=h264,aac","video/webm;codecs=vp9,opus","video/webm"];const mime=types.find(MediaRecorder.isTypeSupported)||"";const rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined),chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(resolve=>rec.onstop=resolve);vp.currentTime=start;await new Promise(r=>vp.onseeked=r);rec.start(500);await vp.play();const render=()=>{if(vp.currentTime>=end||vp.ended){vp.pause();rec.stop();return;}ctx.fillStyle="#000";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.filter=`brightness(${$("#videoBrightness").value}%) contrast(${$("#videoContrast").value}%)`;const s=Math.max(canvas.width/vp.videoWidth,canvas.height/vp.videoHeight),w=vp.videoWidth*s,h=vp.videoHeight*s;ctx.drawImage(vp,(canvas.width-w)/2,(canvas.height-h)/2,w,h);ctx.filter="none";const text=$("#videoText").value;if(text){ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=`800 ${Math.round(+$("#videoTextSize").value*canvas.width/900)}px Arial`;ctx.lineWidth=8;ctx.strokeStyle="rgba(0,0,0,.7)";ctx.fillStyle=$("#videoTextColor").value;const pos=$("#videoTextPosition").value,y=pos==="top"?canvas.height*.13:pos==="center"?canvas.height*.5:canvas.height*.87;ctx.strokeText(text,canvas.width/2,y,canvas.width*.85);ctx.fillText(text,canvas.width/2,y,canvas.width*.85);}requestAnimationFrame(render);};render();await done;const blob=new Blob(chunks,{type:mime||"video/webm"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=mime.startsWith("video/mp4")?"nour-ai-bearbeitet.mp4":"nour-ai-bearbeitet.webm";a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);}catch(e){alert("Export nicht möglich: "+e.message);}};
+
+checkBackend();
