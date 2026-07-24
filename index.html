@@ -22,7 +22,7 @@
       <div class="history" id="history"></div>
 
       <div class="sidebar-foot">
-        <div class="mini-status"><span class="status-dot"></span><span>Gemini verbunden nach Einrichtung</span></div>
+        <div class="mini-status"><span class="status-dot"></span><span id="sidebarAccountText">Gastmodus · Gemini verbunden</span></div>
         <button class="ghost full" id="clearChatsBtn">Verlauf löschen</button>
       </div>
     </aside>
@@ -38,7 +38,7 @@
         </div>
         <div class="top-actions">
           <span class="connection" id="connection"><i></i> Bereit</span>
-          <div class="avatar">G</div>
+          <button class="avatar account-button" id="accountBtn" type="button" aria-label="Konto öffnen">G</button>
         </div>
       </header>
 
@@ -80,7 +80,7 @@
                 <option value="9:16">9:16 Hochformat</option>
               </select>
             </label>
-            <span class="paid-note">Wird lokal im Browser gerendert – 0 €.</span>
+            <span class="paid-note">Veo benötigt meist einen bezahlten API-Zugang.</span>
           </div>
           <div class="option-group website-options hidden">
             <span class="editor-note">Nach der Erstellung kannst du Texte, Farben, Bilder und Buttons bearbeiten.</span>
@@ -97,6 +97,96 @@
   </div>
 
   <div class="mobile-shade" id="mobileShade"></div>
+
+
+  <dialog class="account-dialog" id="accountDialog">
+    <button class="dialog-close" id="accountClose" type="button">×</button>
+
+    <section id="guestAccountView">
+      <h2>Anmelden</h2>
+      <p class="dialog-muted">Du kannst Nour AI weiterhin ohne Anmeldung als Gast benutzen.</p>
+
+      <label class="field-label">Benutzername
+        <input id="loginUsername" autocomplete="username" placeholder="Benutzername">
+      </label>
+      <label class="field-label">Passwort
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort">
+      </label>
+
+      <div class="dialog-error hidden" id="loginError"></div>
+      <button class="primary wide" id="loginSubmit" type="button">Anmelden</button>
+      <button class="ghost wide" id="registerSubmit" type="button">Kostenlos registrieren</button>
+      <p class="small-print">Keine E-Mail und keine Bestätigung erforderlich.</p>
+    </section>
+
+    <section class="hidden" id="signedInAccountView">
+      <div class="account-profile">
+        <div class="profile-avatar" id="profileAvatar">N</div>
+        <div>
+          <h2 id="profileName">Nour AI Benutzer</h2>
+          <p id="profileRole">Benutzer</p>
+        </div>
+      </div>
+
+      <label class="field-label">Neues Passwort
+        <input id="changePassword" type="password" placeholder="Mindestens 4 Zeichen">
+      </label>
+      <button class="ghost wide" id="changePasswordBtn" type="button">Passwort ändern</button>
+      <button class="primary wide hidden" id="openAdminBtn" type="button">Admin-Bereich öffnen</button>
+      <button class="danger-btn wide" id="logoutBtn" type="button">Abmelden</button>
+    </section>
+  </dialog>
+
+  <dialog class="admin-dialog" id="adminDialog">
+    <div class="admin-head">
+      <div>
+        <strong>Admin-Bereich</strong>
+        <span>Konten und Ansicht verwalten</span>
+      </div>
+      <button class="icon-btn" id="adminClose" type="button">×</button>
+    </div>
+
+    <div class="admin-body">
+      <section class="admin-card">
+        <h3>Konten</h3>
+        <div class="admin-form-grid">
+          <input id="adminNewName" placeholder="Name">
+          <input id="adminNewUsername" placeholder="Benutzername">
+          <input id="adminNewPassword" type="password" placeholder="Passwort">
+          <select id="adminNewRole">
+            <option value="user">Benutzer</option>
+            <option value="employee">Mitarbeiter</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="dialog-error hidden" id="adminUserError"></div>
+        <button class="primary" id="adminCreateUser" type="button">Konto erstellen</button>
+        <div class="user-list" id="adminUserList"></div>
+      </section>
+
+      <section class="admin-card">
+        <h3>Ansicht</h3>
+        <label class="field-label">Name
+          <input id="brandNameInput" value="Nour AI">
+        </label>
+        <label class="field-label">Untertitel
+          <input id="brandSubtitleInput" value="Creative Intelligence">
+        </label>
+        <label class="field-label">Logo-Buchstabe
+          <input id="brandLetterInput" maxlength="2" value="N">
+        </label>
+        <label class="field-label">Akzentfarbe
+          <input id="brandAccentInput" type="color" value="#6d5dfc">
+        </label>
+        <label class="toggle-label">
+          <input id="autoToolInput" type="checkbox" checked>
+          <span>Werkzeug automatisch erkennen, zum Beispiel bei „Erstelle ein Bild“.</span>
+        </label>
+        <button class="primary wide" id="saveBrandBtn" type="button">Ansicht speichern</button>
+        <button class="danger-btn wide" id="resetLocalAccountsBtn" type="button">Lokale Konten zurücksetzen</button>
+      </section>
+    </div>
+  </dialog>
 
   <dialog class="setup-dialog" id="setupDialog">
     <button class="dialog-close" id="setupClose">×</button>
