@@ -1,0 +1,30 @@
+6–7G2 QUIZ – EINFACHE INSTALLATION
+
+1. In Supabase links auf SQL Editor > New query klicken.
+2. Die Datei SUPABASE-UPDATE.txt öffnen, alles kopieren, einfügen und RUN drücken.
+3. In Supabase zu Authentication > Sign In / Providers > Email gehen.
+4. "Confirm email" ausschalten und speichern. Das ist nötig, damit der feste Admin sofort angelegt werden kann.
+5. In GitHub im Repository Safa-2013/6-7G2 alle Website-Dateien ersetzen:
+   index.html, styles.css, app.js, config.js und den Ordner assets.
+6. Commit changes drücken und 1–3 Minuten warten.
+7. Website mit Strg+Shift+R bzw. Cmd+Shift+R neu laden.
+
+ADMIN-ANMELDUNG
+Benutzername: Admin
+Passwort: AdminSafa
+
+Beim allerersten Anmeldeversuch legt die Website dieses Admin-Konto automatisch an.
+
+NEUE FUNKTIONEN
+- 30 Fragen; bei jedem Quiz werden zufällig 10 ausgewählt.
+- Antworten A–D werden jedes Mal neu gemischt.
+- Spielen ohne Konto mit Spielername.
+- Tabelle mit letzten Spielergebnissen.
+- Rangliste nach Punkten und Platz 1, 2, 3 usw.
+- Admin kann Fragen erstellen, ändern und löschen.
+- Admin kann Texte, Farbe und Logo der Seite ändern.
+- Admin kann Konten erstellen, Rollen ändern und Konten deaktivieren.
+- Admin kann Ergebnisse einzeln oder vollständig löschen.
+
+HINWEIS
+Das Passwort AdminSafa ist absichtlich fest eingetragen und deshalb für eine öffentliche Website nicht besonders sicher. Ändere es später, falls die Seite nicht nur als Schulprojekt genutzt wird.

@@ -1,0 +1,6 @@
+Behoben:
+- Admin-Zugangsdaten werden nicht mehr auf der Anmeldeseite angezeigt.
+- Ergebnisse werden bei einem Supabase-Fehler wenigstens auf dem aktuellen Gerät in der Rangliste gespeichert.
+- Die Fehlermeldung erklärt jetzt, wenn die Project URL unvollständig ist.
+
+WICHTIG: Die momentan eingetragene URL knxneujtdkeoprnseub.supabase.co ist unvollständig. Der Teil vor .supabase.co hat nur 19 Zeichen. Eine Supabase Project URL hat dort 20 Zeichen. Kopiere die URL in Supabase vollständig und ersetze sie in config.js. Nicht abschreiben.
