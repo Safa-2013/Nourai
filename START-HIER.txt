@@ -1,15 +1,22 @@
-NOUR AI V4 AKTUALISIEREN
+NOUR AI STUDIO v5 – 0-EURO-VERSION
 
-1. Alle Dateien und Ordner aus dieser ZIP bei GitHub in das Repository Nourai hochladen.
-2. Vorhandene Dateien ersetzen und Commit changes drücken.
-3. 1–3 Minuten warten. Vercel aktualisiert die Website automatisch.
-4. Die .vercel.app-Adresse neu laden.
+KOSTENLOS:
+- KI-Chat und Websites im kostenlosen Gemini-Kontingent
+- Bilder als KI-generierte SVG-Vektorgrafiken
+- Videos als KI-geplante Motion Graphics, lokal im Browser gerendert
+- Bild-, Video- und Website-Editor
+- Gastmodus, Anmeldung und Adminbereich
 
-ADMIN
-Benutzername: admin
-Passwort: admin123
+AKTUALISIEREN:
+1. ZIP entpacken.
+2. GitHub > Nourai > Add file > Upload files.
+3. ALLES aus dem Ordner hochladen.
+4. Commit changes.
+5. 1–3 Minuten warten.
+6. .vercel.app-Adresse mit Cmd+Shift+R neu laden.
 
-Der Gemini-Schlüssel muss NICHT erneut eingetragen werden.
+GEMINI_API_KEY muss nicht erneut eingetragen werden.
 
-WICHTIG
-Die Konten werden in dieser einfachen Version nur im jeweiligen Browser gespeichert.
+ADMIN: admin / admin123
+
+Grenze: Vektorgrafiken statt fotorealistischer Fotos; Motion Graphics statt fotorealistischer KI-Filme.

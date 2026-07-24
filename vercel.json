@@ -1,13 +1,16 @@
 {
   "functions": {
-    "api/video-start.js": {
-      "maxDuration": 300
-    },
-    "api/video-status.js": {
+    "api/chat.js": {
       "maxDuration": 60
     },
-    "api/video-download.js": {
-      "maxDuration": 300
+    "api/image.js": {
+      "maxDuration": 60
+    },
+    "api/video-start.js": {
+      "maxDuration": 60
+    },
+    "api/website.js": {
+      "maxDuration": 60
     }
   }
 }

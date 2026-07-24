@@ -153,9 +153,9 @@ function saveChats() {
     ...chat,
     messages: chat.messages.slice(-40).map(message => {
       const copy = { ...message };
-      if (copy.type === "image" && copy.src?.startsWith("data:")) {
+      if ((copy.type === "image" && copy.src?.startsWith("data:")) || (copy.type === "video" && copy.src?.startsWith("blob:"))) {
         delete copy.src;
-        copy.text = copy.text || "Bild wurde erstellt. Das Bild wird aus Platzgründen nicht im Browser-Verlauf gespeichert.";
+        copy.text = copy.text || (copy.type === "video" ? "Video wurde erstellt. Nach einem Neuladen muss es neu gerendert werden." : "Bild wurde erstellt. Das Bild wird aus Platzgründen nicht im Browser-Verlauf gespeichert.");
       }
       return copy;
     })
@@ -254,11 +254,11 @@ function welcomeHtml() {
     <div class="welcome">
       <div class="welcome-logo">${escapeHtml(state.brand.letter || "N")}</div>
       <h1>Was möchtest du heute machen?</h1>
-      <p>Unterhalte dich mit Nour AI, erstelle echte Bilder, generiere Videos oder baue eine komplette Website.</p>
+      <p>Unterhalte dich mit Nour AI, erstelle kostenlose KI-Vektorgrafiken, Motion-Graphic-Videos oder komplette Websites.</p>
       <div class="suggestions">
         <button class="suggestion" data-suggest="Erkläre mir einfach, wie künstliche Intelligenz funktioniert."><b>Etwas erklären</b><span>Fragen stellen und verständliche Antworten erhalten</span></button>
-        <button class="suggestion" data-mode-suggest="image" data-suggest="Erstelle ein hochwertiges futuristisches Logo für Nour AI auf dunklem Hintergrund."><b>Ein Bild erstellen</b><span>Poster, Logos, Produktbilder und Illustrationen</span></button>
-        <button class="suggestion" data-mode-suggest="video" data-suggest="Ein cineastisches Video einer leuchtenden futuristischen Stadt bei Nacht, Kameraflug zwischen den Gebäuden, passende Geräusche."><b>Ein Video erstellen</b><span>8 Sekunden mit Veo und Ton</span></button>
+        <button class="suggestion" data-mode-suggest="image" data-suggest="Erstelle ein hochwertiges futuristisches Logo für Nour AI auf dunklem Hintergrund."><b>Ein Bild erstellen</b><span>Kostenlose KI-Vektorgrafiken, Logos, Poster und Illustrationen</span></button>
+        <button class="suggestion" data-mode-suggest="video" data-suggest="Ein cineastisches Video einer leuchtenden futuristischen Stadt bei Nacht, Kameraflug zwischen den Gebäuden, passende Geräusche."><b>Ein Video erstellen</b><span>8 Sekunden Motion Graphics – lokal und kostenlos gerendert</span></button>
         <button class="suggestion" data-mode-suggest="website" data-suggest="Eine moderne Website für ein kreatives KI-Studio namens Nour AI, dunkles Premium-Design, Leistungen, Beispiele und Kontaktbereich."><b>Eine Website bauen</b><span>Danach direkt visuell bearbeiten</span></button>
       </div>
     </div>`;
@@ -272,7 +272,7 @@ function messageHtml(message) {
 
   let result = "";
   if (message.type === "image" && message.src) {
-    result = `<div class="result-card"><img src="${message.src}" alt="Von Nour AI erzeugtes Bild"><div class="card-actions">${editable ? `<button class="primary edit-image" data-message-id="${message.id}">Bild bearbeiten</button>` : ""}<a href="${message.src}" download="nour-ai-bild.jpg">Bild herunterladen</a></div></div>`;
+    result = `<div class="result-card"><img src="${message.src}" alt="Von Nour AI erzeugtes Bild"><div class="card-actions">${editable ? `<button class="primary edit-image" data-message-id="${message.id}">Bild bearbeiten</button>` : ""}<a href="${message.src}" download="nour-ai-bild.svg">SVG herunterladen</a></div></div>`;
   }
   if (message.type === "website" && message.html) {
     const encoded = encodeURIComponent(message.id);
@@ -282,7 +282,7 @@ function messageHtml(message) {
     result = `<div class="result-card progress-card"><div class="progress-head"><b>Video wird erstellt</b><span>${escapeHtml(message.status || "Das kann einige Minuten dauern …")}</span></div><div class="progress-track"><div class="progress-bar"></div></div></div>`;
   }
   if (message.type === "video" && message.src) {
-    result = `<div class="result-card"><video src="${escapeHtml(message.src)}" controls playsinline></video><div class="card-actions">${editable ? `<button class="primary edit-video" data-message-id="${message.id}">Video bearbeiten</button>` : ""}<a href="${escapeHtml(message.src)}" download="nour-ai-video.mp4">Original herunterladen</a><span class="paid-note">Google speichert erzeugte Videos nur begrenzte Zeit.</span></div></div>`;
+    result = `<div class="result-card"><video src="${escapeHtml(message.src)}" controls playsinline></video><div class="card-actions">${editable ? `<button class="primary edit-video" data-message-id="${message.id}">Video bearbeiten</button>` : ""}<a href="${escapeHtml(message.src)}" download="nour-ai-video.webm">Video herunterladen</a><span class="paid-note">Lokal im Browser gerendert – keine Videokosten.</span></div></div>`;
   }
 
   return `<article class="message assistant"><div class="message-avatar">${escapeHtml(state.brand.letter || "N")}</div><div><div class="message-meta">${escapeHtml(state.brand.name || "Nour AI")}</div><div class="bubble">${formatText(message.text || "")}${result}</div></div></article>`;
@@ -361,7 +361,7 @@ function setMode(mode) {
   const labels = {
     chat: ["Chat", "Nachricht an Nour AI …"],
     image: ["Bild erstellen", "Beschreibe genau, welches Bild du möchtest …"],
-    video: ["Video erstellen", "Beschreibe Szene, Kamerabewegung und Ton …"],
+    video: ["Kostenloses Video", "Beschreibe Text, Stil und Stimmung des Motion-Graphic-Videos …"],
     website: ["Website erstellen", "Beschreibe deine Website, Farben und Inhalte …"]
   };
   els.topSubtitle.textContent = labels[mode][0];
@@ -453,7 +453,7 @@ async function sendImage(prompt) {
       })
     });
     removeMessage(typingId);
-    addMessage({ role: "assistant", text: data.text || "Das Bild ist fertig.", type: "image", src: data.image });
+    addMessage({ role: "assistant", text: data.text || "Die kostenlose KI-Vektorgrafik ist fertig.", type: "image", src: data.image });
     clearInputImage();
   } catch (error) {
     removeMessage(typingId);
@@ -479,48 +479,17 @@ async function sendWebsite(prompt) {
   }
 }
 
-async function sendVideo(prompt) {
-  let progressMessage;
-  try {
-    const data = await api("/api/video-start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, aspectRatio: $("#videoRatio").value })
-    });
-    progressMessage = addMessage({ role: "assistant", text: "", type: "video-progress", operation: data.operation, status: "Veo rendert dein 8-Sekunden-Video …" });
-    await pollVideo(progressMessage.id, data.operation);
-  } catch (error) {
-    maybeSetup(error);
-    if (progressMessage) updateMessage(progressMessage.id, { type: "text", text: `Video konnte nicht erstellt werden: ${error.message}` });
-    else addMessage({ role: "assistant", text: `Video konnte nicht gestartet werden: ${error.message}`, type: "text" });
-  }
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight){const words=String(text||"").split(/\s+/),lines=[];let line="";for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);const startY=y-((lines.length-1)*lineHeight)/2;lines.slice(0,4).forEach((value,index)=>{ctx.strokeText(value,x,startY+index*lineHeight,maxWidth);ctx.fillText(value,x,startY+index*lineHeight,maxWidth);});}
+async function renderFreeVideo(storyboard,aspectRatio="16:9"){
+  if(!window.MediaRecorder)throw new Error("Dein Browser unterstützt den kostenlosen Videoexport leider nicht.");
+  const canvas=document.createElement("canvas"),sizes={"16:9":[960,540],"9:16":[540,960],"1:1":[720,720]};[canvas.width,canvas.height]=sizes[aspectRatio]||sizes["16:9"];const ctx=canvas.getContext("2d"),stream=canvas.captureStream(30);let audioContext=null;
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){audioContext=new AC();await audioContext.resume();const destination=audioContext.createMediaStreamDestination(),gain=audioContext.createGain(),oscillator=audioContext.createOscillator();gain.gain.value=.035;oscillator.type=storyboard.musicMood==="dramatisch"?"sawtooth":storyboard.musicMood==="ruhig"?"sine":"triangle";oscillator.frequency.value=storyboard.musicMood==="ruhig"?174:220;oscillator.connect(gain).connect(destination);oscillator.start();destination.stream.getAudioTracks().forEach(track=>stream.addTrack(track));setTimeout(()=>{try{oscillator.stop()}catch{}},8500);}}catch{}
+  const mimeTypes=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"],mimeType=mimeTypes.find(type=>MediaRecorder.isTypeSupported(type))||"",recorder=new MediaRecorder(stream,mimeType?{mimeType,videoBitsPerSecond:5000000}:undefined),chunks=[];recorder.ondataavailable=e=>e.data.size&&chunks.push(e.data);const stopped=new Promise(resolve=>recorder.onstop=resolve),scenes=storyboard.scenes?.length?storyboard.scenes:[{text:storyboard.title,emoji:"✨",color1:"#6d5dfc",color2:"#16112f"}],duration=8,started=performance.now();recorder.start(300);
+  await new Promise(resolve=>{function frame(now){const elapsed=Math.min(duration,(now-started)/1000),sceneLength=duration/scenes.length,sceneIndex=Math.min(scenes.length-1,Math.floor(elapsed/sceneLength)),scene=scenes[sceneIndex],local=(elapsed-sceneIndex*sceneLength)/sceneLength,ease=1-Math.pow(1-Math.min(1,local*2.2),3),gradient=ctx.createLinearGradient(0,0,canvas.width,canvas.height);gradient.addColorStop(0,scene.color1||"#6d5dfc");gradient.addColorStop(1,scene.color2||"#111827");ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();for(let i=0;i<12;i++){const angle=i*.75+elapsed*(.18+i*.002),radius=canvas.width*(.10+(i%5)*.055),x=canvas.width/2+Math.cos(angle)*radius,y=canvas.height/2+Math.sin(angle*1.25)*radius*.65;ctx.globalAlpha=.06+(i%3)*.025;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,canvas.width*(.035+(i%4)*.012),0,Math.PI*2);ctx.fill()}ctx.restore();const scale=.82+ease*.18;ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.scale(scale,scale);ctx.textAlign="center";ctx.textBaseline="middle";ctx.globalAlpha=Math.min(1,local*4,(1-local)*5);ctx.font=`800 ${Math.round(canvas.width*.075)}px Arial`;ctx.lineWidth=Math.max(5,canvas.width*.009);ctx.strokeStyle="rgba(0,0,0,.45)";ctx.fillStyle="#fff";wrapCanvasText(ctx,scene.text,0,canvas.height*.035,canvas.width*.78,canvas.width*.09);ctx.font=`${Math.round(canvas.width*.11)}px Arial`;ctx.fillText(scene.emoji||"✨",0,-canvas.height*.18);ctx.restore();ctx.globalAlpha=.75;ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font=`600 ${Math.round(canvas.width*.018)}px Arial`;ctx.fillText(storyboard.subtitle||storyboard.title||"Nour AI",canvas.width/2,canvas.height*.90,canvas.width*.8);ctx.globalAlpha=1;ctx.fillStyle="rgba(255,255,255,.25)";ctx.fillRect(canvas.width*.08,canvas.height*.955,canvas.width*.84,Math.max(3,canvas.height*.006));ctx.fillStyle="#fff";ctx.fillRect(canvas.width*.08,canvas.height*.955,canvas.width*.84*(elapsed/duration),Math.max(3,canvas.height*.006));if(elapsed<duration)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)});
+  recorder.stop();await stopped;try{await audioContext?.close()}catch{}const blob=new Blob(chunks,{type:mimeType||"video/webm"});if(!blob.size)throw new Error("Der Browser konnte das Video nicht rendern.");return URL.createObjectURL(blob);
 }
-
-async function pollVideo(messageId, operation) {
-  const start = Date.now();
-  let checks = 0;
-  while (Date.now() - start < 7 * 60 * 1000) {
-    await wait(checks === 0 ? 4000 : 10000);
-    checks += 1;
-    const data = await api(`/api/video-status?operation=${encodeURIComponent(operation)}`);
-    if (data.done) {
-      updateMessage(messageId, {
-        type: "video",
-        text: "Dein Video ist fertig.",
-        src: data.downloadUrl,
-        status: undefined
-      });
-      return;
-    }
-    const elapsed = Math.round((Date.now() - start) / 1000);
-    updateMessage(messageId, { status: `Seit ${elapsed} Sekunden in Bearbeitung …` });
-  }
-  throw new Error("Das Video dauert ungewöhnlich lange. Versuche es später erneut.");
-}
-
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+async function sendVideo(prompt){let progressMessage;try{const data=await api("/api/video-start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,aspectRatio:$("#videoRatio").value})});progressMessage=addMessage({role:"assistant",text:"",type:"video-progress",status:"KI erstellt Storyboard und dein Browser rendert das Video kostenlos …"});const src=await renderFreeVideo(data.storyboard,data.aspectRatio||$("#videoRatio").value);updateMessage(progressMessage.id,{type:"video",text:"Dein kostenloses KI-Motion-Graphic-Video ist fertig und kann im CapCut-ähnlichen Editor bearbeitet werden.",src,status:undefined});}catch(error){maybeSetup(error);if(progressMessage)updateMessage(progressMessage.id,{type:"text",text:`Video konnte nicht erstellt werden: ${error.message}`});else addMessage({role:"assistant",text:`Video konnte nicht gestartet werden: ${error.message}`,type:"text"});}}
+function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 els.composer.addEventListener("submit", async event => {
   event.preventDefault();

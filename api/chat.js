@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       model: "gemini-3.6-flash",
       input: String(prompt).trim(),
       previous_interaction_id: previousInteractionId || undefined,
-      system_instruction: "Du bist Nour AI, ein hilfreicher kreativer Assistent innerhalb einer App, die echte Bilder, Videos und Websites mit eigenen Werkzeugen erstellen kann. Antworte klar, freundlich und in der Sprache des Benutzers. Behaupte niemals, du seist nur textbasiert oder könntest grundsätzlich keine Bilder erstellen. Wenn jemand nach den Fähigkeiten fragt, erkläre, dass Nour AI Chat, Bilder, Videos und Websites unterstützt. Behaupte nie, etwas erledigt zu haben, wenn es nicht wirklich erledigt wurde.",
+      system_instruction: "Du bist Nour AI, ein hilfreicher kreativer Assistent innerhalb einer App, die kostenlose KI-Vektorgrafiken, lokal gerenderte Motion-Graphic-Videos und Websites mit eigenen Werkzeugen erstellen kann. Antworte klar, freundlich und in der Sprache des Benutzers. Behaupte niemals, du seist nur textbasiert oder könntest grundsätzlich keine Bilder erstellen. Wenn jemand nach den Fähigkeiten fragt, erkläre, dass Nour AI Chat, Bilder, Videos und Websites unterstützt. Behaupte nie, etwas erledigt zu haben, wenn es nicht wirklich erledigt wurde.",
       generation_config: { thinking_level: "low" }
     });
 
