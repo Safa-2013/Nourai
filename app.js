@@ -1,6 +1,10 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const STORAGE_KEY = "nour-ai-chats-v2";
+const AUTH_KEY = "nour-ai-local-accounts-v1";
+const SESSION_KEY = "nour-ai-local-session-v1";
+const BRAND_KEY = "nour-ai-brand-v1";
+const DEFAULT_ADMIN_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9";
 
 const state = {
   mode: "chat",
@@ -8,7 +12,10 @@ const state = {
   currentId: null,
   busy: false,
   inputImage: null,
-  editorHtml: ""
+  editorHtml: "",
+  accounts: loadAccounts(),
+  sessionUserId: localStorage.getItem(SESSION_KEY) || null,
+  brand: loadBrand()
 };
 
 const els = {
@@ -24,8 +31,113 @@ const els = {
   setup: $("#setupDialog"),
   editor: $("#editorDialog"),
   editorFrame: $("#editorFrame"),
-  editorStage: $("#editorStage")
+  editorStage: $("#editorStage"),
+  accountDialog: $("#accountDialog"),
+  adminDialog: $("#adminDialog")
 };
+
+
+function loadAccounts() {
+  try {
+    const accounts = JSON.parse(localStorage.getItem(AUTH_KEY) || "[]");
+    if (Array.isArray(accounts) && accounts.length) return accounts;
+  } catch {}
+  const defaults = [{ id: "admin-local", username: "admin", name: "Administrator", role: "admin", passwordHash: DEFAULT_ADMIN_HASH, createdAt: Date.now() }];
+  localStorage.setItem(AUTH_KEY, JSON.stringify(defaults));
+  return defaults;
+}
+function saveAccounts() { localStorage.setItem(AUTH_KEY, JSON.stringify(state.accounts)); }
+function loadBrand() {
+  try {
+    return { name:"Nour AI", subtitle:"Creative Intelligence", letter:"N", accent:"#7c6cff", autoTool:true, ...JSON.parse(localStorage.getItem(BRAND_KEY)||"{}") };
+  } catch {
+    return { name:"Nour AI", subtitle:"Creative Intelligence", letter:"N", accent:"#7c6cff", autoTool:true };
+  }
+}
+function saveBrand() { localStorage.setItem(BRAND_KEY, JSON.stringify(state.brand)); }
+async function hashPassword(value) {
+  const data = new TextEncoder().encode(String(value));
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2,"0")).join("");
+}
+function currentUser() { return state.accounts.find(account => account.id === state.sessionUserId) || null; }
+function ownerKey() { return currentUser()?.id || "guest"; }
+function isAdmin() { return currentUser()?.role === "admin"; }
+function canAccessChat(chat) { return isAdmin() || (chat.owner || "guest") === ownerKey(); }
+function canEditChat(chat) { return canAccessChat(chat); }
+function roleLabel(role) { return ({admin:"Admin",employee:"Mitarbeiter",user:"Benutzer"})[role] || role; }
+function accountById(id) { return state.accounts.find(account => account.id === id); }
+
+function applyBrand() {
+  document.documentElement.style.setProperty("--accent", state.brand.accent || "#7c6cff");
+  document.title = state.brand.name || "Nour AI";
+  $$(".brand-copy strong").forEach(el => el.textContent = state.brand.name);
+  $$(".brand-copy span").forEach(el => el.textContent = state.brand.subtitle);
+  $$(".brand-mark,.welcome-logo,.message-avatar").forEach(el => el.textContent = state.brand.letter || "N");
+  $("#topTitle").textContent = state.brand.name;
+  $("#brandNameInput").value = state.brand.name;
+  $("#brandSubtitleInput").value = state.brand.subtitle;
+  $("#brandLetterInput").value = state.brand.letter;
+  $("#brandAccentInput").value = state.brand.accent;
+  $("#autoToolInput").checked = state.brand.autoTool !== false;
+}
+function renderAccount() {
+  const user = currentUser();
+  $("#guestAccountView").classList.toggle("hidden", !!user);
+  $("#signedInAccountView").classList.toggle("hidden", !user);
+  $("#openAdminBtn").classList.toggle("hidden", !isAdmin());
+  $("#accountBtn").textContent = user ? (user.name || user.username).slice(0,1).toUpperCase() : "G";
+  $("#sidebarAccountText").textContent = user ? `${user.name || user.username} · ${roleLabel(user.role)}` : "Gastmodus · Gemini verbunden";
+  if (user) {
+    $("#profileAvatar").textContent = (user.name || user.username).slice(0,1).toUpperCase();
+    $("#profileName").textContent = user.name || user.username;
+    $("#profileRole").textContent = `${roleLabel(user.role)} · @${user.username}`;
+  }
+}
+function showError(id, message="") {
+  const el=$(id);
+  el.textContent=message;
+  el.classList.toggle("hidden", !message);
+}
+function renderAdminUsers() {
+  const list=$("#adminUserList");
+  list.innerHTML = state.accounts.map(account => {
+    const own = account.id === currentUser()?.id;
+    return `<div class="user-row" data-user-id="${escapeHtml(account.id)}"><div><strong>${escapeHtml(account.name || account.username)}</strong><small>@${escapeHtml(account.username)}${own?" · Du":""}</small></div><select class="admin-role" ${own?"disabled":""}><option value="user" ${account.role==="user"?"selected":""}>Benutzer</option><option value="employee" ${account.role==="employee"?"selected":""}>Mitarbeiter</option><option value="admin" ${account.role==="admin"?"selected":""}>Admin</option></select><button class="admin-delete" ${own?"disabled":""}>Löschen</button></div>`;
+  }).join("");
+  $$(".admin-role",list).forEach(select => select.onchange = () => {
+    const row=select.closest(".user-row");
+    const account=accountById(row.dataset.userId);
+    if(!account||account.id===currentUser()?.id)return;
+    account.role=select.value;
+    saveAccounts();
+    renderAdminUsers();
+  });
+  $$(".admin-delete",list).forEach(button => button.onclick = () => {
+    const id=button.closest(".user-row").dataset.userId;
+    if(id===currentUser()?.id)return;
+    if(!confirm("Dieses lokale Konto löschen?"))return;
+    state.accounts=state.accounts.filter(account=>account.id!==id);
+    saveAccounts();
+    renderAdminUsers();
+  });
+}
+function resetViewForIdentity() {
+  const available=state.chats.filter(canAccessChat);
+  state.currentId=available[0]?.id || null;
+  if(!state.currentId) createChat(); else renderAll();
+  renderAccount();
+}
+function detectRequestedMode(prompt) {
+  if (state.brand.autoTool === false) return "chat";
+  const p=String(prompt).toLowerCase();
+  const wants=/(^|\s)(erstelle|erstell|mach|mache|generiere|zeichne|entwirf|baue|produziere|designe|ich möchte|ich will|bitte)(\s|$)/i.test(p);
+  if(!wants) return "chat";
+  if(/\b(video|film|clip|reel|animation)\b/i.test(p)) return "video";
+  if(/\b(website|webseite|homepage|landingpage|webshop|shopseite)\b/i.test(p)) return "website";
+  if(/\b(bild|foto|logo|poster|grafik|sticker|illustration|werbung|instagram[- ]?post)\b/i.test(p)) return "image";
+  return "chat";
+}
 
 function loadChats() {
   try {
@@ -56,7 +168,8 @@ function makeId() {
 }
 
 function currentChat() {
-  return state.chats.find(chat => chat.id === state.currentId) || null;
+  const chat = state.chats.find(chat => chat.id === state.currentId) || null;
+  return chat && canAccessChat(chat) ? chat : null;
 }
 
 function createChat() {
@@ -65,6 +178,7 @@ function createChat() {
     title: "Neuer Chat",
     createdAt: Date.now(),
     previousInteractionId: null,
+    owner: ownerKey(),
     messages: []
   };
   state.chats.unshift(chat);
@@ -78,7 +192,7 @@ function createChat() {
 }
 
 function openChat(id) {
-  if (!state.chats.some(chat => chat.id === id)) return;
+  if (!state.chats.some(chat => chat.id === id && canAccessChat(chat))) return;
   state.currentId = id;
   renderAll();
   closeSidebar();
@@ -86,7 +200,7 @@ function openChat(id) {
 
 function deleteAllChats() {
   if (!confirm("Möchtest du den gesamten lokalen Verlauf löschen?")) return;
-  state.chats = [];
+  state.chats = state.chats.filter(chat => !canAccessChat(chat));
   state.currentId = null;
   saveChats();
   createChat();
@@ -138,7 +252,7 @@ function formatText(value = "") {
 function welcomeHtml() {
   return `
     <div class="welcome">
-      <div class="welcome-logo">N</div>
+      <div class="welcome-logo">${escapeHtml(state.brand.letter || "N")}</div>
       <h1>Was möchtest du heute machen?</h1>
       <p>Unterhalte dich mit Nour AI, erstelle echte Bilder, generiere Videos oder baue eine komplette Website.</p>
       <div class="suggestions">
@@ -151,26 +265,27 @@ function welcomeHtml() {
 }
 
 function messageHtml(message) {
+  const editable = canEditChat(currentChat());
   if (message.role === "user") {
     return `<article class="message user"><div class="bubble">${formatText(message.text)}</div></article>`;
   }
 
   let result = "";
   if (message.type === "image" && message.src) {
-    result = `<div class="result-card"><img src="${message.src}" alt="Von Nour AI erzeugtes Bild"><div class="card-actions"><button class="primary edit-image" data-message-id="${message.id}">Bild bearbeiten</button><a href="${message.src}" download="nour-ai-bild.png">Bild herunterladen</a></div></div>`;
+    result = `<div class="result-card"><img src="${message.src}" alt="Von Nour AI erzeugtes Bild"><div class="card-actions">${editable ? `<button class="primary edit-image" data-message-id="${message.id}">Bild bearbeiten</button>` : ""}<a href="${message.src}" download="nour-ai-bild.jpg">Bild herunterladen</a></div></div>`;
   }
   if (message.type === "website" && message.html) {
     const encoded = encodeURIComponent(message.id);
-    result = `<div class="result-card"><iframe title="Website-Vorschau" sandbox="allow-same-origin" data-website-id="${encoded}"></iframe><div class="card-actions"><button class="primary edit-site" data-message-id="${message.id}">Website bearbeiten</button><button class="download-site" data-message-id="${message.id}">HTML herunterladen</button></div></div>`;
+    result = `<div class="result-card"><iframe title="Website-Vorschau" sandbox="allow-same-origin" data-website-id="${encoded}"></iframe><div class="card-actions">${editable ? `<button class="primary edit-site" data-message-id="${message.id}">Website bearbeiten</button>` : ""}<button class="download-site" data-message-id="${message.id}">HTML herunterladen</button></div></div>`;
   }
   if (message.type === "video-progress") {
     result = `<div class="result-card progress-card"><div class="progress-head"><b>Video wird erstellt</b><span>${escapeHtml(message.status || "Das kann einige Minuten dauern …")}</span></div><div class="progress-track"><div class="progress-bar"></div></div></div>`;
   }
   if (message.type === "video" && message.src) {
-    result = `<div class="result-card"><video src="${escapeHtml(message.src)}" controls playsinline></video><div class="card-actions"><button class="primary edit-video" data-message-id="${message.id}">Video bearbeiten</button><a href="${escapeHtml(message.src)}" download="nour-ai-video.mp4">Original herunterladen</a><span class="paid-note">Google speichert erzeugte Videos nur begrenzte Zeit.</span></div></div>`;
+    result = `<div class="result-card"><video src="${escapeHtml(message.src)}" controls playsinline></video><div class="card-actions">${editable ? `<button class="primary edit-video" data-message-id="${message.id}">Video bearbeiten</button>` : ""}<a href="${escapeHtml(message.src)}" download="nour-ai-video.mp4">Original herunterladen</a><span class="paid-note">Google speichert erzeugte Videos nur begrenzte Zeit.</span></div></div>`;
   }
 
-  return `<article class="message assistant"><div class="message-avatar">N</div><div><div class="message-meta">Nour AI</div><div class="bubble">${formatText(message.text || "")}${result}</div></div></article>`;
+  return `<article class="message assistant"><div class="message-avatar">${escapeHtml(state.brand.letter || "N")}</div><div><div class="message-meta">${escapeHtml(state.brand.name || "Nour AI")}</div><div class="bubble">${formatText(message.text || "")}${result}</div></div></article>`;
 }
 
 function renderMessages() {
@@ -211,9 +326,12 @@ function renderHistory() {
     els.history.innerHTML = `<div class="sidebar-label">Noch kein Verlauf</div>`;
     return;
   }
-  els.history.innerHTML = state.chats.map(chat => `
-    <button class="history-item ${chat.id === state.currentId ? "active" : ""}" data-chat-id="${chat.id}" title="${escapeHtml(chat.title)}">${escapeHtml(chat.title)}</button>
-  `).join("");
+  const visibleChats = state.chats.filter(canAccessChat);
+  els.history.innerHTML = visibleChats.map(chat => {
+    const owner = accountById(chat.owner);
+    const ownerTag = isAdmin() && owner ? `<span class="owner-chip">${escapeHtml(owner.username)}</span>` : "";
+    return `<button class="history-item ${chat.id === state.currentId ? "active" : ""}" data-chat-id="${chat.id}" title="${escapeHtml(chat.title)}">${escapeHtml(chat.title)}${ownerTag}</button>`;
+  }).join("");
   $$(".history-item", els.history).forEach(button => button.onclick = () => openChat(button.dataset.chatId));
 }
 
@@ -410,18 +528,22 @@ els.composer.addEventListener("submit", async event => {
   const prompt = els.prompt.value.trim();
   if (!prompt) return;
 
+  const autoSwitched = state.mode === "chat" && detectRequestedMode(prompt) !== "chat";
+  const detectedMode = state.mode === "chat" ? detectRequestedMode(prompt) : state.mode;
+  if (autoSwitched) setMode(detectedMode);
   addMessage({ role: "user", text: prompt, type: "text" });
   els.prompt.value = "";
   autoSize();
   setBusy(true);
 
   try {
-    if (state.mode === "chat") await sendChat(prompt);
-    if (state.mode === "image") await sendImage(prompt);
-    if (state.mode === "website") await sendWebsite(prompt);
-    if (state.mode === "video") await sendVideo(prompt);
+    if (detectedMode === "chat") await sendChat(prompt);
+    if (detectedMode === "image") await sendImage(prompt);
+    if (detectedMode === "website") await sendWebsite(prompt);
+    if (detectedMode === "video") await sendVideo(prompt);
   } finally {
     setBusy(false);
+    if (autoSwitched) setMode("chat");
     els.prompt.focus();
   }
 });
@@ -563,11 +685,94 @@ $("#setupClose").onclick = () => els.setup.close();
 $("#setupOkay").onclick = () => els.setup.close();
 $$('.mode').forEach(button => button.onclick = () => setMode(button.dataset.mode));
 
-if (!state.chats.length) createChat();
+
+$("#accountBtn").onclick = () => { renderAccount(); showError("#loginError"); els.accountDialog.showModal(); };
+$("#accountClose").onclick = () => els.accountDialog.close();
+$("#loginPassword").onkeydown = event => { if(event.key === "Enter") $("#loginSubmit").click(); };
+
+$("#loginSubmit").onclick = async () => {
+  const username=$("#loginUsername").value.trim().toLowerCase();
+  const password=$("#loginPassword").value;
+  const hash=await hashPassword(password);
+  const account=state.accounts.find(item=>item.username.toLowerCase()===username && item.passwordHash===hash);
+  if(!account){ showError("#loginError","Benutzername oder Passwort ist falsch."); return; }
+  state.sessionUserId=account.id;
+  localStorage.setItem(SESSION_KEY,account.id);
+  $("#loginPassword").value="";
+  showError("#loginError");
+  els.accountDialog.close();
+  resetViewForIdentity();
+};
+
+$("#registerSubmit").onclick = async () => {
+  const username=$("#loginUsername").value.trim().toLowerCase();
+  const password=$("#loginPassword").value;
+  if(username.length<3){ showError("#loginError","Der Benutzername braucht mindestens 3 Zeichen."); return; }
+  if(password.length<4){ showError("#loginError","Das Passwort braucht mindestens 4 Zeichen."); return; }
+  if(state.accounts.some(item=>item.username.toLowerCase()===username)){ showError("#loginError","Dieser Benutzername ist bereits vergeben."); return; }
+  const account={id:makeId(),username,name:username,role:"user",passwordHash:await hashPassword(password),createdAt:Date.now()};
+  state.accounts.push(account); saveAccounts();
+  state.sessionUserId=account.id; localStorage.setItem(SESSION_KEY,account.id);
+  els.accountDialog.close(); resetViewForIdentity();
+};
+
+$("#logoutBtn").onclick = () => {
+  state.sessionUserId=null; localStorage.removeItem(SESSION_KEY);
+  els.accountDialog.close(); resetViewForIdentity();
+};
+
+$("#changePasswordBtn").onclick = async () => {
+  const user=currentUser(), password=$("#changePassword").value;
+  if(!user || password.length<4){ alert("Das neue Passwort braucht mindestens 4 Zeichen."); return; }
+  user.passwordHash=await hashPassword(password); saveAccounts(); $("#changePassword").value=""; alert("Passwort geändert.");
+};
+
+$("#openAdminBtn").onclick = () => {
+  if(!isAdmin())return;
+  els.accountDialog.close(); renderAdminUsers(); applyBrand(); els.adminDialog.showModal();
+};
+$("#adminClose").onclick = () => els.adminDialog.close();
+
+$("#adminCreateUser").onclick = async () => {
+  if(!isAdmin())return;
+  const name=$("#adminNewName").value.trim();
+  const username=$("#adminNewUsername").value.trim().toLowerCase();
+  const password=$("#adminNewPassword").value;
+  const role=$("#adminNewRole").value;
+  if(username.length<3 || password.length<4){ showError("#adminUserError","Benutzername: mindestens 3 Zeichen. Passwort: mindestens 4 Zeichen."); return; }
+  if(state.accounts.some(item=>item.username.toLowerCase()===username)){ showError("#adminUserError","Dieser Benutzername existiert bereits."); return; }
+  state.accounts.push({id:makeId(),name:name||username,username,role,passwordHash:await hashPassword(password),createdAt:Date.now()});
+  saveAccounts(); showError("#adminUserError");
+  $("#adminNewName").value=""; $("#adminNewUsername").value=""; $("#adminNewPassword").value="";
+  renderAdminUsers();
+};
+
+$("#saveBrandBtn").onclick = () => {
+  if(!isAdmin())return;
+  state.brand={
+    name:$("#brandNameInput").value.trim()||"Nour AI",
+    subtitle:$("#brandSubtitleInput").value.trim()||"Creative Intelligence",
+    letter:$("#brandLetterInput").value.trim().slice(0,2).toUpperCase()||"N",
+    accent:$("#brandAccentInput").value,
+    autoTool:$("#autoToolInput").checked
+  };
+  saveBrand(); applyBrand(); renderMessages(); alert("Ansicht gespeichert.");
+};
+
+$("#resetLocalAccountsBtn").onclick = () => {
+  if(!isAdmin() || !confirm("Alle lokalen Konten zurücksetzen? Lokale Chats bleiben erhalten."))return;
+  state.accounts=[{id:"admin-local",username:"admin",name:"Administrator",role:"admin",passwordHash:DEFAULT_ADMIN_HASH,createdAt:Date.now()}];
+  saveAccounts(); state.sessionUserId="admin-local"; localStorage.setItem(SESSION_KEY,"admin-local");
+  renderAdminUsers(); renderAccount(); alert("Zurückgesetzt. Admin: admin");
+};
+
+if (!state.chats.filter(canAccessChat).length) createChat();
 else {
-  state.currentId = state.chats[0].id;
+  state.currentId = state.chats.find(canAccessChat)?.id || null;
   renderAll();
 }
+applyBrand();
+renderAccount();
 setMode("chat");
 autoSize();
 

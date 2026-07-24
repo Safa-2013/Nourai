@@ -1,9 +1,15 @@
-NOUR AI STUDIO V3 – NUR 3 SCHRITTE
+NOUR AI V4 AKTUALISIEREN
 
-1. Entpacke diese ZIP. Lade den INHALT des Ordners in dein GitHub-Repository hoch. Wichtig: Die Ordner api UND lib müssen sichtbar sein.
-2. Öffne Vercel → dein Projekt → Deployments → Redeploy. GEMINI_API_KEY bleibt gespeichert.
-3. Öffne ausschließlich die Adresse, die auf .vercel.app endet. Die github.io-Adresse ist nur eine alte statische Seite und verursacht 405.
+1. Alle Dateien und Ordner aus dieser ZIP bei GitHub in das Repository Nourai hochladen.
+2. Vorhandene Dateien ersetzen und Commit changes drücken.
+3. 1–3 Minuten warten. Vercel aktualisiert die Website automatisch.
+4. Die .vercel.app-Adresse neu laden.
 
-TEST: Öffne DEINE-ADRESSE.vercel.app/api/health. Dort muss JSON mit ok:true erscheinen.
+ADMIN
+Benutzername: admin
+Passwort: admin123
 
-Neu: Bilder können in einer Canva-ähnlichen Ansicht bearbeitet werden. Videos öffnen sich in einer einfachen CapCut-ähnlichen Timeline. Websites besitzen weiterhin den visuellen Editor.
+Der Gemini-Schlüssel muss NICHT erneut eingetragen werden.
+
+WICHTIG
+Die Konten werden in dieser einfachen Version nur im jeweiligen Browser gespeichert.

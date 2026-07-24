@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       input,
       response_format: {
         type: "image",
-        mime_type: "image/png",
+        mime_type: "image/jpeg",
         aspect_ratio: aspectRatio,
         image_size: imageSize
       }
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     if (!image?.data) throw new Error("Das Bildmodell hat kein Bild zurückgegeben. Prüfe, ob Bildgenerierung für dein Google-Projekt freigeschaltet und bezahlt ist.");
 
     res.status(200).json({
-      image: `data:image/png;base64,${image.data}`,
+      image: `data:image/jpeg;base64,${image.data}`,
       text: interaction.output_text || "Bild erstellt."
     });
   } catch (error) {
