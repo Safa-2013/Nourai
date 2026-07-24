@@ -482,13 +482,113 @@ async function sendWebsite(prompt) {
 function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight){const words=String(text||"").split(/\s+/),lines=[];let line="";for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);const startY=y-((lines.length-1)*lineHeight)/2;lines.slice(0,4).forEach((value,index)=>{ctx.strokeText(value,x,startY+index*lineHeight,maxWidth);ctx.fillText(value,x,startY+index*lineHeight,maxWidth);});}
 async function renderFreeVideo(storyboard,aspectRatio="16:9"){
   if(!window.MediaRecorder)throw new Error("Dein Browser unterstützt den kostenlosen Videoexport leider nicht.");
-  const canvas=document.createElement("canvas"),sizes={"16:9":[960,540],"9:16":[540,960],"1:1":[720,720]};[canvas.width,canvas.height]=sizes[aspectRatio]||sizes["16:9"];const ctx=canvas.getContext("2d"),stream=canvas.captureStream(30);let audioContext=null;
-  try{const AC=window.AudioContext||window.webkitAudioContext;if(AC){audioContext=new AC();await audioContext.resume();const destination=audioContext.createMediaStreamDestination(),gain=audioContext.createGain(),oscillator=audioContext.createOscillator();gain.gain.value=.035;oscillator.type=storyboard.musicMood==="dramatisch"?"sawtooth":storyboard.musicMood==="ruhig"?"sine":"triangle";oscillator.frequency.value=storyboard.musicMood==="ruhig"?174:220;oscillator.connect(gain).connect(destination);oscillator.start();destination.stream.getAudioTracks().forEach(track=>stream.addTrack(track));setTimeout(()=>{try{oscillator.stop()}catch{}},8500);}}catch{}
-  const mimeTypes=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"],mimeType=mimeTypes.find(type=>MediaRecorder.isTypeSupported(type))||"",recorder=new MediaRecorder(stream,mimeType?{mimeType,videoBitsPerSecond:5000000}:undefined),chunks=[];recorder.ondataavailable=e=>e.data.size&&chunks.push(e.data);const stopped=new Promise(resolve=>recorder.onstop=resolve),scenes=storyboard.scenes?.length?storyboard.scenes:[{text:storyboard.title,emoji:"✨",color1:"#6d5dfc",color2:"#16112f"}],duration=8,started=performance.now();recorder.start(300);
-  await new Promise(resolve=>{function frame(now){const elapsed=Math.min(duration,(now-started)/1000),sceneLength=duration/scenes.length,sceneIndex=Math.min(scenes.length-1,Math.floor(elapsed/sceneLength)),scene=scenes[sceneIndex],local=(elapsed-sceneIndex*sceneLength)/sceneLength,ease=1-Math.pow(1-Math.min(1,local*2.2),3),gradient=ctx.createLinearGradient(0,0,canvas.width,canvas.height);gradient.addColorStop(0,scene.color1||"#6d5dfc");gradient.addColorStop(1,scene.color2||"#111827");ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.save();for(let i=0;i<12;i++){const angle=i*.75+elapsed*(.18+i*.002),radius=canvas.width*(.10+(i%5)*.055),x=canvas.width/2+Math.cos(angle)*radius,y=canvas.height/2+Math.sin(angle*1.25)*radius*.65;ctx.globalAlpha=.06+(i%3)*.025;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,canvas.width*(.035+(i%4)*.012),0,Math.PI*2);ctx.fill()}ctx.restore();const scale=.82+ease*.18;ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.scale(scale,scale);ctx.textAlign="center";ctx.textBaseline="middle";ctx.globalAlpha=Math.min(1,local*4,(1-local)*5);ctx.font=`800 ${Math.round(canvas.width*.075)}px Arial`;ctx.lineWidth=Math.max(5,canvas.width*.009);ctx.strokeStyle="rgba(0,0,0,.45)";ctx.fillStyle="#fff";wrapCanvasText(ctx,scene.text,0,canvas.height*.035,canvas.width*.78,canvas.width*.09);ctx.font=`${Math.round(canvas.width*.11)}px Arial`;ctx.fillText(scene.emoji||"✨",0,-canvas.height*.18);ctx.restore();ctx.globalAlpha=.75;ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font=`600 ${Math.round(canvas.width*.018)}px Arial`;ctx.fillText(storyboard.subtitle||storyboard.title||"Nour AI",canvas.width/2,canvas.height*.90,canvas.width*.8);ctx.globalAlpha=1;ctx.fillStyle="rgba(255,255,255,.25)";ctx.fillRect(canvas.width*.08,canvas.height*.955,canvas.width*.84,Math.max(3,canvas.height*.006));ctx.fillStyle="#fff";ctx.fillRect(canvas.width*.08,canvas.height*.955,canvas.width*.84*(elapsed/duration),Math.max(3,canvas.height*.006));if(elapsed<duration)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)});
-  recorder.stop();await stopped;try{await audioContext?.close()}catch{}const blob=new Blob(chunks,{type:mimeType||"video/webm"});if(!blob.size)throw new Error("Der Browser konnte das Video nicht rendern.");return URL.createObjectURL(blob);
+  const canvas=document.createElement("canvas"),sizes={"16:9":[854,480],"9:16":[480,854],"1:1":[640,640]};
+  [canvas.width,canvas.height]=sizes[aspectRatio]||sizes["16:9"];
+  const ctx=canvas.getContext("2d"),stream=canvas.captureStream(24);
+  let audioContext=null,oscillator=null;
+
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(AC){
+      audioContext=new AC();
+      await Promise.race([audioContext.resume(),new Promise(resolve=>setTimeout(resolve,1500))]);
+      const destination=audioContext.createMediaStreamDestination(),gain=audioContext.createGain();
+      oscillator=audioContext.createOscillator();
+      gain.gain.value=.025;
+      oscillator.type=storyboard.musicMood==="dramatisch"?"sawtooth":storyboard.musicMood==="ruhig"?"sine":"triangle";
+      oscillator.frequency.value=storyboard.musicMood==="ruhig"?174:220;
+      oscillator.connect(gain).connect(destination);
+      oscillator.start();
+      destination.stream.getAudioTracks().forEach(track=>stream.addTrack(track));
+    }
+  }catch{}
+
+  const mimeTypes=["video/webm;codecs=vp8,opus","video/webm;codecs=vp9,opus","video/webm"];
+  const mimeType=mimeTypes.find(type=>MediaRecorder.isTypeSupported(type))||"";
+  let recorder;
+  try{
+    recorder=new MediaRecorder(stream,mimeType?{mimeType,videoBitsPerSecond:2500000}:undefined);
+  }catch{
+    recorder=new MediaRecorder(stream);
+  }
+
+  const chunks=[];
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const stopped=new Promise(resolve=>{
+    recorder.onstop=resolve;
+    recorder.onerror=resolve;
+  });
+
+  const scenes=storyboard.scenes?.length?storyboard.scenes:[{text:storyboard.title,emoji:"✨",color1:"#6d5dfc",color2:"#16112f"}];
+  const duration=6,started=performance.now();
+  recorder.start(250);
+
+  await Promise.race([
+    new Promise(resolve=>{
+      let finished=false;
+      const emergency=setTimeout(()=>{if(!finished){finished=true;resolve()}},10000);
+      function frame(now){
+        if(finished)return;
+        const elapsed=Math.min(duration,(now-started)/1000),sceneLength=duration/scenes.length;
+        const sceneIndex=Math.min(scenes.length-1,Math.floor(elapsed/sceneLength));
+        const scene=scenes[sceneIndex],local=(elapsed-sceneIndex*sceneLength)/sceneLength;
+        const ease=1-Math.pow(1-Math.min(1,local*2.2),3);
+        const gradient=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+        gradient.addColorStop(0,scene.color1||"#6d5dfc");
+        gradient.addColorStop(1,scene.color2||"#111827");
+        ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        ctx.save();
+        for(let i=0;i<8;i++){
+          const angle=i*.8+elapsed*.2,radius=canvas.width*(.11+(i%4)*.06);
+          const x=canvas.width/2+Math.cos(angle)*radius,y=canvas.height/2+Math.sin(angle*1.2)*radius*.6;
+          ctx.globalAlpha=.07+(i%3)*.02;ctx.fillStyle="#fff";ctx.beginPath();
+          ctx.arc(x,y,canvas.width*(.035+(i%3)*.012),0,Math.PI*2);ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.save();ctx.translate(canvas.width/2,canvas.height/2);
+        const scale=.84+ease*.16;ctx.scale(scale,scale);
+        ctx.textAlign="center";ctx.textBaseline="middle";
+        ctx.globalAlpha=Math.min(1,local*4,(1-local)*5);
+        ctx.font=`800 ${Math.round(canvas.width*.074)}px Arial`;
+        ctx.lineWidth=Math.max(4,canvas.width*.008);
+        ctx.strokeStyle="rgba(0,0,0,.45)";ctx.fillStyle="#fff";
+        wrapCanvasText(ctx,scene.text,0,canvas.height*.04,canvas.width*.78,canvas.width*.09);
+        ctx.font=`${Math.round(canvas.width*.11)}px Arial`;
+        ctx.fillText(scene.emoji||"✨",0,-canvas.height*.18);
+        ctx.restore();
+
+        ctx.globalAlpha=.8;ctx.textAlign="center";ctx.fillStyle="#fff";
+        ctx.font=`600 ${Math.round(canvas.width*.019)}px Arial`;
+        ctx.fillText(storyboard.subtitle||storyboard.title||"Nour AI",canvas.width/2,canvas.height*.90,canvas.width*.8);
+        ctx.globalAlpha=1;
+        ctx.fillStyle="rgba(255,255,255,.25)";
+        ctx.fillRect(canvas.width*.08,canvas.height*.955,canvas.width*.84,Math.max(3,canvas.height*.006));
+        ctx.fillStyle="#fff";
+        ctx.fillRect(canvas.width*.08,canvas.height*.955,canvas.width*.84*(elapsed/duration),Math.max(3,canvas.height*.006));
+
+        if(elapsed<duration)requestAnimationFrame(frame);
+        else{finished=true;clearTimeout(emergency);resolve()}
+      }
+      requestAnimationFrame(frame);
+    }),
+    new Promise(resolve=>setTimeout(resolve,12000))
+  ]);
+
+  try{recorder.requestData()}catch{}
+  await new Promise(resolve=>setTimeout(resolve,250));
+  try{if(recorder.state!=="inactive")recorder.stop()}catch{}
+  await Promise.race([stopped,new Promise(resolve=>setTimeout(resolve,3000))]);
+
+  try{oscillator?.stop()}catch{}
+  try{await audioContext?.close()}catch{}
+
+  const blob=new Blob(chunks,{type:mimeType||"video/webm"});
+  if(!blob.size)throw new Error("Der Browser konnte das Video nicht exportieren. Bitte Google Chrome benutzen.");
+  return URL.createObjectURL(blob);
 }
-async function sendVideo(prompt){let progressMessage;try{const data=await api("/api/video-start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,aspectRatio:$("#videoRatio").value})});progressMessage=addMessage({role:"assistant",text:"",type:"video-progress",status:"KI erstellt Storyboard und dein Browser rendert das Video kostenlos …"});const src=await renderFreeVideo(data.storyboard,data.aspectRatio||$("#videoRatio").value);updateMessage(progressMessage.id,{type:"video",text:"Dein kostenloses KI-Motion-Graphic-Video ist fertig und kann im CapCut-ähnlichen Editor bearbeitet werden.",src,status:undefined});}catch(error){maybeSetup(error);if(progressMessage)updateMessage(progressMessage.id,{type:"text",text:`Video konnte nicht erstellt werden: ${error.message}`});else addMessage({role:"assistant",text:`Video konnte nicht gestartet werden: ${error.message}`,type:"text"});}}
+async function sendVideo(prompt){let progressMessage;try{const data=await api("/api/video-start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,aspectRatio:$("#videoRatio").value})});progressMessage=addMessage({role:"assistant",text:"",type:"video-progress",status:"KI erstellt Storyboard und dein Browser rendert das Video kostenlos …"});const src=await Promise.race([renderFreeVideo(data.storyboard,data.aspectRatio||$("#videoRatio").value),new Promise((_,reject)=>setTimeout(()=>reject(new Error("Zeitlimit erreicht. Bitte erneut versuchen oder Google Chrome benutzen.")),25000))]);updateMessage(progressMessage.id,{type:"video",text:"Dein kostenloses KI-Motion-Graphic-Video ist fertig und kann im CapCut-ähnlichen Editor bearbeitet werden.",src,status:undefined});}catch(error){maybeSetup(error);if(progressMessage)updateMessage(progressMessage.id,{type:"text",text:`Video konnte nicht erstellt werden: ${error.message}`});else addMessage({role:"assistant",text:`Video konnte nicht gestartet werden: ${error.message}`,type:"text"});}}
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 els.composer.addEventListener("submit", async event => {
